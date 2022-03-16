@@ -1,25 +1,36 @@
-import logo from './logo.svg';
 import './App.css';
 import {Buffer} from 'buffer';
 
 Buffer.from('anything', 'base64');
 import PSD from 'psd.js';
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import image from "./building.psd";
+import {get} from 'lodash';
 
 function App() {
     const [psdFile, setPsdFile] = useState(null);
+    const fileSize = useMemo(() => {
+        const file = psdFile ? psdFile.tree().export() : {};
+        return {
+            width: get(file, 'document.width', 0),
+            height: get(file, 'document.height', 0)
+        }
+    }, [psdFile]);
     const [layers, setLayers] = useState([]);
 
     useEffect(() => {
         PSD.fromURL(image).then(function (psd) {
             const layerList = psd.tree().descendants();
-            console.log("ALL INFO");
-            console.log(psd);
-            console.log("LAYER LIST");
-            console.log(layerList);
             const basicLayer = layerList[layerList.length - 1];
-            if (document.getElementById('imgwrapper')) document.getElementById('imgwrapper').replaceWith(basicLayer.layer.image.toPng());
+            if (document.getElementById('imgwrapper') && !document.getElementById('building')) {
+                const buildingImage = basicLayer.layer.image.toPng();
+                buildingImage.setAttribute('id', 'building');
+                buildingImage.setAttribute('top', `${basicLayer.coords.top}px`);
+                buildingImage.style.top = `${basicLayer.coords.top}px`;
+                buildingImage.style.left = `${basicLayer.coords.left}px`;
+                document.getElementById('imgwrapper').appendChild(buildingImage);
+                document.getElementById('testimage').appendChild(psd.image.toPng());
+            }
             setPsdFile(psd);
         });
     }, []);
@@ -57,16 +68,19 @@ function App() {
                 <p>Psd file
 
                 </p>
-                <div>
-                    {
-                        layers.filter(item => item.layer.visible === true).map((item, i) =>
-                            <img key={i} src={item.src}/>)
-                    }
+                <div className="building-image-wrapper" style={fileSize}>
+                    <div id="imgwrapper"/>
+                    <div>
+                        {
+                            layers.filter(item => item.layer.visible === true).map((item, i) =>
+                                <img style={{left: item.coords.left, top: item.coords.top}} key={i} src={item.src}/>)
+                        }
+                    </div>
                 </div>
-                <div id="imgwrapper"/>
                 <div>
                     {drawLayerButtons()}
                 </div>
+                <div id="testimage"/>
             </header>
         </div>
     );
