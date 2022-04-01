@@ -4,7 +4,7 @@ import {Buffer} from 'buffer';
 Buffer.from('anything', 'base64');
 import PSD from 'psd.js';
 import {useEffect, useMemo, useState} from "react";
-import image from "./building.psd";
+import image from "./building2.psd";
 import {get} from 'lodash';
 
 function App() {
@@ -21,6 +21,7 @@ function App() {
     useEffect(() => {
         PSD.fromURL(image).then(function (psd) {
             const layerList = psd.tree().descendants();
+            console.log(psd.tree());
             const basicLayer = layerList[layerList.length - 1];
             if (document.getElementById('imgwrapper') && !document.getElementById('building')) {
                 const buildingImage = basicLayer.layer.image.toPng();
